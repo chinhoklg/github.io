@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>免費 LED MQTT 控制面板</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; text-align: center; }
+        .led-control { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; border: none; cursor: pointer; }
+        .on { background-color: #4CAF50; color: white; }
+        .off { background-color: #f44336; color: white; }
+        .status { margin-left: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>MQTT LED 控制面板</h1>
+    <p>連接到 MQTT 伺服器: <span id="mqtt-status">未連接</span></p>
+    
+    <div class="led-control">
+        <h3>LED 1</h3>
+        <button onclick="controlLed('led1', 'on')" class="on">開啟</button>
+        <button onclick="controlLed('led1', 'off')" class="off">關閉</button>
+        <span id="led1-status" class="status">狀態未知</span>
+    </div>
+    
+    <div class="led-control">
+        <h3>LED 2</h3>
+        <button onclick="controlLed('led2', 'on')" class="on">開啟</button>
+        <button onclick="controlLed('led2', 'off')" class="off">關閉</button>
+        <span id="led2-status" class="status">狀態未知</span>
+    </div>
+    
+    <div class="led-control">
+        <h3>LED 3</h3>
+        <button onclick="controlLed('led3', 'on')" class="on">開啟</button>
+        <button onclick="controlLed('led3', 'off')" class="off">關閉</button>
+        <span id="led3-status" class="status">狀態未知</span>
+    </div>
+
+    <script>
+        // MQTT 客戶端設置
+        const clientId = "webclient_" + Math.random().toString(16).substr(2, 8);
+        const client = new Paho.MQTT.Client("broker.hivemq.com", 8884, clientId);
+        
+        // 連接選項
+        const options = {
+            onSuccess: () => {
+                document.getElementById("mqtt-status").textContent = "已連接 (ID: " + clientId + ")";
+                console.log("MQTT 連接成功");
+            },
+            onFailure: (err) => {
+                document.getElementById("mqtt-status").textContent = "連接失敗";
+                console.error("MQTT 連接失敗", err);
+            }
+        };
+        
+        // 建立連接
+        client.connect(options);
+        
+        // 控制 LED 函數
+        function controlLed(led, action) {
+            const topic = `home/${led}`;
+            const message = new Paho.MQTT.Message(action);
+            message.destinationName = topic;
+            client.send(message);
+            
+            // 更新狀態顯示
+            document.getElementById(`${led}-status`).textContent = action === 'on' ? '已開啟' : '已關閉';
+            console.log(`已發送: ${topic} ${action}`);
+        }
+    </script>
+</body>
+</html>
